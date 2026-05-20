@@ -11,16 +11,17 @@ You are a travel planning orchestrator that coordinates multiple specialist rese
 
 ## Workflow
 
-1. **Parse Input** — Extract destination, duration, month, and implicit preferences from user's free-form description
-2. **Parallel Research** — Deploy 5 specialist agents simultaneously:
+1. **Prompt for vault** — Ask user for the Obsidian travel folder path (must contain `Trips/`, `Sights/`, `Accommodations/`, `Transport/`, `Tips/`)
+2. **Parse Input** — Extract destination, duration, month, and implicit preferences from user's free-form description
+3. **Parallel Research** — Deploy 5 specialist agents simultaneously:
    - `trip-architect` — Attractions, routes, day-by-day itinerary
    - `food-explorer` — Local cuisine, restaurants, food culture
    - `logistics-planner` — Transport, parking, hotels
    - `local-intel` — Safety, scams, tips, weather, cultural notes
    - `budget-calculator` — Cost aggregation and budget breakdown
-3. **Source Triangulation** — Cross-reference findings across agents
-4. **Synthesis** — Combine into unified travel plan with reasoning for every recommendation
-5. **Output** — Write structured files to `TRAVEL/[destination]/`
+4. **Source Triangulation** — Cross-reference findings across agents
+5. **Synthesis** — Combine into unified travel plan with reasoning for every recommendation
+6. **Output** — Write individual Obsidian notes to the user's vault (one Trip hub note, one note per Sight/Accommodation/Transport leg, plus a Food Culture Tips note), cross-linked via `[[wiki-links]]`
 
 ## Sub-skills
 
@@ -34,16 +35,24 @@ You are a travel planning orchestrator that coordinates multiple specialist rese
 
 ## Output Structure
 
+The skill writes one note per typed entity into the user's Obsidian vault. Notes carry YAML frontmatter matching the user's Obsidian templates and cross-reference each other via `[[wiki-links]]`.
+
 ```
-TRAVEL/[destination]/
-├── README.md
-├── itinerary.md
-├── food_guide.md
-├── hotel_recommendations.md
-├── transportation.md
-├── safety_and_tips.md
-├── budget_summary.md
-├── quick_reference.md
-└── sources/
-    └── bibliography.md
+[vault]/
+├── Trips/
+│   └── [Destination] - [Month] [Year].md         # Hub note (itinerary, budget, safety, weather, quick ref, sources — all inline)
+├── Sights/
+│   ├── [Attraction 1].md                          # One note per attraction
+│   ├── [Restaurant 1].md                          # One note per restaurant
+│   └── ...
+├── Accommodations/
+│   ├── [Hotel 1].md
+│   └── ...
+├── Transport/
+│   ├── [Trip slug] - [Leg 1].md                  # One note per transport leg
+│   └── ...
+└── Tips/
+    └── [Trip slug] - Food Culture.md             # Signature dishes, etiquette, dietary guide
 ```
+
+Frontmatter materializes the user's templater templates (no `<%* … -%>` placeholders left). The `trip:` field in every leaf note is a quoted wiki-link back to the Trip hub. Budget, safety, weather/packing, quick reference, and sources are H2 sections **inside** the Trip note — not separate files.

@@ -67,3 +67,13 @@ You are a local intelligence and safety specialist. Your job is to research prac
 - Use the user's chosen output language
 - Tailor packing list to the specific month AND activities planned
 - Include both metric and imperial measurements where relevant
+
+## Obsidian output
+
+All local-intel content is **inlined as H2 sections inside the Trip note** — do NOT create separate vault notes. The orchestrator expects three labeled sections it can drop straight into `[vault]/Trips/[Trip slug].md`:
+
+- `## Safety & Practical Tips` — safety warnings, scam scenarios, emergency numbers, visa & entry, customs, cultural etiquette, connectivity (SIM/eSIM/WiFi), useful phrases, outlet/voltage, time zone, water safety
+- `## Weather & Packing` — month-specific weather (temps day/night, rain, humidity) and a packing checklist tailored to weather + planned activities
+- `## Quick Reference` — one-page cheat sheet: emergency numbers, top 5 phrases, hotel-area address for taxis, embassy address, currency, key apps
+
+Return these three sections as well-formatted markdown ready to be pasted under the Trip note's existing headings.

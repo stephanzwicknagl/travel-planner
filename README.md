@@ -11,7 +11,7 @@ Travel Planner is an orchestration skill that deploys 5 specialized research age
 - 🎯 **Parallel Research** - 5 specialist agents work simultaneously for faster results
 - 📍 **Comprehensive Coverage** - Attractions, food, transport, safety, and budget in one plan
 - 🔍 **Source Triangulation** - Cross-reference findings across multiple web sources
-- 📊 **Structured Output** - Organized markdown files ready for reference
+- 📊 **Obsidian-native output** - Writes individual notes into your Obsidian vault's `Trips/`, `Sights/`, `Accommodations/`, `Transport/`, `Tips/` folders with proper YAML frontmatter and `[[wiki-links]]`
 - 💡 **Reasoning-Based** - Every recommendation includes explanation and context
 - 🌍 **Web-Powered** - Uses WebSearch and WebFetch for up-to-date information
 
@@ -119,57 +119,69 @@ The skill accepts free-form natural language descriptions. It automatically extr
 ```
 You: Plan a 4-day trip to Rome in June
 
-Claude: I'm activating the travel-planner skill to create a comprehensive
-travel plan for Rome. I'll deploy 5 specialist agents to research:
-- Attractions and day-by-day itinerary
-- Local cuisine and restaurant recommendations
-- Transportation and hotel options
-- Safety tips and cultural etiquette
-- Complete budget breakdown
+Claude: What's the absolute path to your Obsidian travel folder?
+        (the directory containing Trips/, Sights/, Accommodations/, Transport/, Tips/)
+You: /home/me/Obsidian/Travel
+
+Claude: I'm activating the travel-planner skill. I'll deploy 5 specialist
+agents to research attractions, food, transport, safety, and budget — then
+write individual Obsidian notes into your vault.
 
 [Agents work in parallel...]
 
-Travel plan complete! I've created structured files in TRAVEL/rome/:
-✓ itinerary.md - 4-day route with attractions
-✓ food_guide.md - Roman specialties and restaurants
-✓ hotel_recommendations.md - 3 options within budget
-✓ transportation.md - Metro, walking routes, airport transfer
-✓ safety_and_tips.md - Scam warnings, dress codes, emergency contacts
-✓ budget_summary.md - €800-1200 total estimate
-✓ quick_reference.md - At-a-glance essentials
+✅ Travel plan written to /home/me/Obsidian/Travel
+
+Trips/
+  - [[Rome - June 2026]]   ← start here
+
+Sights/  (14 notes)
+  - [[Colosseum]], [[Vatican Museums]], [[Trastevere Walk]], …
+  - [[Da Enzo al 29]], [[Roscioli]], [[Pizzarium]], …
+
+Accommodations/  (3 notes)
+  - [[Hotel Artemide]], [[The RomeHello]], [[Casa Fabbrini]]
+
+Transport/  (4 notes)
+  - [[Rome - June 2026 - FCO to Termini via Leonardo Express]], …
+
+Tips/
+  - [[Rome - June 2026 - Food Culture]]
 ```
 
 ## Output Structure
 
-All plans are saved to `TRAVEL/[destination]/` with the following files:
+The skill writes one Obsidian note per typed entity — Trip (hub), Sight (each attraction + each restaurant), Accommodation (each hotel), Transport (each leg), plus one Tips note for food culture. Notes carry YAML frontmatter matching the user's Obsidian templates and cross-reference each other via `[[wiki-links]]`.
 
 ```
-TRAVEL/rome/
-├── README.md                    # Overview and getting started
-├── itinerary.md                 # Day-by-day schedule with attractions
-├── food_guide.md                # Local dishes, restaurants, food culture
-├── hotel_recommendations.md     # 3 hotel options with pros/cons
-├── transportation.md            # Metro, buses, parking, airport transfer
-├── safety_and_tips.md          # Safety, scams, weather, cultural notes
-├── budget_summary.md           # Itemized costs and money-saving tips
-├── quick_reference.md          # Essential info at a glance
-└── sources/
-    └── bibliography.md         # All web sources used
+[your vault]/
+├── Trips/
+│   └── Rome - June 2026.md          # Hub: itinerary, budget, safety, weather, quick ref, sources
+├── Sights/
+│   ├── Colosseum.md                  # One note per attraction OR restaurant
+│   ├── Vatican Museums.md
+│   ├── Da Enzo al 29.md
+│   └── ...
+├── Accommodations/
+│   ├── Hotel Artemide.md             # One note per hotel option
+│   └── ...
+├── Transport/
+│   ├── Rome - June 2026 - FCO to Termini via Leonardo Express.md
+│   └── ...                           # One note per flight/train/transfer
+└── Tips/
+    └── Rome - June 2026 - Food Culture.md   # Signature dishes, etiquette, dietary guide
 ```
 
-### File Descriptions
+### Note Type Descriptions
 
-| File | Contents |
-|------|----------|
-| **README.md** | Trip overview, best time to visit, highlights, preparation checklist |
-| **itinerary.md** | Day-by-day schedule with attraction details, opening hours, visit duration, reasoning for order |
-| **food_guide.md** | Signature dishes, restaurant recommendations (budget/mid/upscale), food markets, dining etiquette |
-| **hotel_recommendations.md** | 3 hotel options with location analysis, price range, booking tips |
-| **transportation.md** | Transit cards, metro routes, parking info, airport transfers, inter-city travel |
-| **safety_and_tips.md** | Safety warnings, common scams, emergency contacts, visa info, cultural do's/don'ts, packing list |
-| **budget_summary.md** | Daily cost breakdown, total estimate ranges, currency exchange tips, money-saving strategies |
-| **quick_reference.md** | Emergency numbers, key phrases, essential apps, quick facts |
-| **sources/bibliography.md** | All web sources with URLs and access dates for fact-checking |
+| Note type (folder) | Contents | Frontmatter highlights |
+|---|---|---|
+| **Trips/** | Hub note. Overview + day-by-day itinerary + budget + safety/scams + weather/packing + quick reference + sources, all as H2 sections. Itinerary links each activity via `[[Sight name]]`. | `tags: type/trip, planning`; `title`, `destination`, `date-start`/`date-end` (blank) |
+| **Sights/** | One note per attraction or restaurant. Why visit, practical info (hours/price/location/booking), tips, sources, back-link to the Trip. | `tags: type/sight, unvisited`; `title`, `trip`, `city`, `country`, `visited` (blank) |
+| **Accommodations/** | One note per hotel option. Why this hotel, practical info, cons, sources, back-link. | `tags: type/stay, upcoming`; `title`, `trip`, `city`, `check-in`/`check-out` (blank) |
+| **Transport/** | One note per leg (flight, train, ferry, transfer). Route, cost, how to book, tips, sources, back-link. | `tags: type/transport, upcoming, [mode]`; `title`, `trip`, `date` (blank) |
+| **Tips/** | One per trip: food culture, signature dishes, etiquette, dietary guide. Other "tips-like" content (safety, weather) stays inline in the Trip note. | `tags: type/tip, food`; `title`, `trip` |
+
+All `created` and `modified` timestamps are stamped to the moment the skill runs.
 
 ## Configuration
 
@@ -291,9 +303,9 @@ The orchestrator combines findings, resolving conflicts and filling gaps:
 - Ensure budget consistency
 - Verify safety information accuracy
 
-### 5. Structured Output
+### 5. Obsidian Output
 
-Results are formatted into markdown files with consistent structure, making them easy to reference during travel.
+Results are written as individual notes into the user's Obsidian vault. The Trip note is the entry point and aggregates the itinerary, budget, safety/weather, and quick reference inline; every attraction, restaurant, hotel, and transport leg gets its own note, frontmatter-tagged and wiki-linked back to the Trip. Open the Trip note in Obsidian and follow the `[[links]]` from there.
 
 ## Requirements
 

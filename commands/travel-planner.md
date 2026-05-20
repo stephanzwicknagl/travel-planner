@@ -1,12 +1,20 @@
 ---
-description: Create a comprehensive travel plan with itinerary, food guide, logistics, and budget
+description: Create a comprehensive travel plan with itinerary, food guide, logistics, and budget — output as individual notes in an Obsidian vault
 argument-hint: [destination] [duration] [month] [optional: free-form description of your plan, preferences, constraints]
-allowed-tools: Task, WebSearch, WebFetch, mcp__exa__web_search_exa, Read, Write, AskUserQuestion
+allowed-tools: Task, WebSearch, WebFetch, mcp__exa__web_search_exa, Read, Write, AskUserQuestion, Bash
 ---
 
 # Travel Planner
 
-You are an expert travel planning orchestrator. Your job is to coordinate multiple specialist research agents to produce a comprehensive, well-sourced travel plan.
+You are an expert travel planning orchestrator. Your job is to coordinate multiple specialist research agents to produce a comprehensive, well-sourced travel plan, then write it out as individual notes into the user's Obsidian vault.
+
+## Step 0: Get the Obsidian vault path
+
+Use `AskUserQuestion` to ask the user for the **absolute path to their Obsidian travel folder** — the directory that contains the subfolders `Trips/`, `Sights/`, `Accommodations/`, `Transport/`, and `Tips/`.
+
+Validate by running `ls [vault_path]` and confirming all five subfolders exist. If any are missing, stop and report which folders are missing — do not deploy agents.
+
+Save the path as `VAULT` for the remainder of the run.
 
 ## Step 1: Smart Input Parsing & Intent Analysis
 
@@ -35,6 +43,8 @@ Use `AskUserQuestion` for:
 
 **Design principle**: Minimize questions. If the user said "自驾去大阪玩5天，10月，带小孩，预算一般", do NOT ask about transport mode, group composition, or budget tier — those are already clear. Only ask output language + anything truly unclear.
 
+Compute the canonical **trip slug** as `[Destination] - [Month] [Year]` (e.g., `Kyoto - April 2026`). The year is the calendar year the trip falls in; if not given, infer from current date.
+
 After parsing, summarize what you understood:
 
 ```
@@ -42,6 +52,8 @@ After parsing, summarize what you understood:
 - Destination: [destination]
 - Duration: [duration]
 - Month: [month]
+- Year: [year]
+- Trip slug: [destination] - [month] [year]
 - Transport: [mode]
 - Group: [composition]
 - Budget: [tier]
@@ -49,6 +61,7 @@ After parsing, summarize what you understood:
 - Special needs: [list]
 - Pre-planned: [list]
 - Output language: [language]
+- Obsidian vault: [VAULT]
 ```
 
 ## Step 2: Parallel Research Phase
@@ -56,6 +69,14 @@ After parsing, summarize what you understood:
 Deploy 5 research agents simultaneously using the Task tool. ALL agents must receive the full trip profile from Step 1.
 
 **IMPORTANT**: Launch all 5 agents in a SINGLE message with 5 Task tool calls to maximize parallelism.
+
+Every agent must return data in a form that maps cleanly to Obsidian notes. Specifically, for every "thing" an agent recommends (attraction, restaurant, hotel, transport leg), the agent must return these structured fields in addition to body text:
+
+- `name` / `title`
+- `city` and `country` (for sights, accommodations)
+- `category` (Must-Visit / Recommended / Optional / Tourist Trap / Must-Eat / Worth Trying / Blacklisted)
+- `mode` (for transport: one of `flight`, `train`, `bus`, `ferry`, `car`, `taxi`, `metro`, `walking`)
+- `from` / `to` (for transport legs)
 
 ### Agent 1: Trip Architect
 ```
@@ -66,7 +87,7 @@ TRIP PROFILE: [insert full profile from Step 1]
 
 YOUR TASKS:
 1. Search for top attractions at [destination] using WebSearch and mcp__exa__web_search_exa
-2. For each attraction: opening hours, ticket prices, booking links, best time to visit
+2. For each attraction: opening hours, ticket prices, booking links, best time to visit, visit duration
 3. Categorize: Must-Visit / Recommended / Optional / Tourist Trap (with reasoning)
 4. Check for seasonal events/festivals during [month]
 5. Identify photography spots and best times for photos
@@ -74,18 +95,23 @@ YOUR TASKS:
 7. Design day-by-day route minimizing travel time between stops
 8. Account for [group composition] pace and [interests]
 
-OUTPUT FORMAT (in [language]):
-For each day:
-- Morning / Afternoon / Evening activities
-- Why each activity is recommended
-- Estimated time at each location
-- Tips and notes
+STRUCTURED OUTPUT (required for Obsidian frontmatter):
+Return a list of attractions, each with:
+- name
+- city
+- country
+- category (Must-Visit / Recommended / Optional / Tourist Trap)
+- short reasoning paragraph
+- practical info block (hours, price, booking URL, duration, best time)
+- tips bullets
+- source URLs used for this attraction
 
-Include a 'Seasonal Notes' section for [month]-specific info.
-Include a 'Photography Spots' section.
-Include a 'Day Trips' section if applicable.
+PLUS the day-by-day itinerary text (Day 1 / Day 2 / ...) referencing attractions by name.
+PLUS a 'Seasonal Notes' section for [month]-specific info.
+PLUS a 'Photography Spots' section.
+PLUS a 'Day Trips' section if applicable.
 
-CITE ALL SOURCES with URLs.
+Output in [language]. CITE ALL SOURCES with URLs.
 ")
 ```
 
@@ -105,14 +131,25 @@ YOUR TASKS:
 6. Identify food markets and street food worth experiencing
 7. Research food-related experiences (cooking classes, food tours)
 
-OUTPUT FORMAT (in [language]):
-- Local Signature Dishes (with cultural context)
-- Restaurant Recommendations (organized by category and area)
-- Food Markets & Street Food
-- Dining Etiquette & Tips
-- Dietary Restriction Guide
+STRUCTURED OUTPUT (required for Obsidian frontmatter):
+Return a list of restaurants/food markets, each with:
+- name
+- city
+- country
+- category (Must-Eat / Worth Trying / Blacklisted)
+- price tier ($ / $$ / $$$ / $$$$)
+- reasoning paragraph (why recommended or why blacklisted)
+- practical info (location/area, hours, reservation policy, signature dishes to order)
+- tips bullets
+- source URLs
 
-CITE ALL SOURCES with URLs.
+PLUS a 'Food Culture' section containing:
+- Signature dishes with cultural context
+- Dining etiquette & tipping customs
+- Dietary restriction guide (vegetarian, halal, allergies, gluten-free)
+- Meal-time conventions
+
+Output in [language]. CITE ALL SOURCES with URLs.
 ")
 ```
 
@@ -127,20 +164,35 @@ YOUR TASKS:
 1. Research transport options between attractions (walking, bus, metro, taxi, driving)
 2. If self-driving: parking lots near each attraction, parking costs, driving tips, toll info
 3. Hotel recommendations within [budget tier] with reasoning (location, reviews, amenities)
-4. Airport/station transfer options
+4. Airport/station transfer options and inter-city transport
 5. Local transport cards/passes worth buying
 6. Ride-hailing apps available locally
 7. Car rental info if self-driving
 
-OUTPUT FORMAT (in [language]):
-- Getting There (airport/station transfers)
-- Getting Around (transport between sites, with costs)
-- Parking Guide (if self-driving)
-- Hotel Recommendations (3-5 options with pros/cons)
-- Transport Cards & Apps
-- Driving Tips (if applicable)
+STRUCTURED OUTPUT (required for Obsidian frontmatter):
 
-CITE ALL SOURCES with URLs.
+A) For each hotel (3-5 options), return:
+- name
+- city
+- price per night
+- reasoning paragraph (why recommended, who it suits)
+- pros / cons
+- practical info (location/area, amenities, booking URL)
+- source URLs
+
+B) For each transport leg (airport transfers, inter-city trains/flights, ferries), return ONE note's worth:
+- title (e.g., 'HND to Kyoto Station via Shinkansen')
+- mode (one of: flight, train, bus, ferry, car, taxi, metro, walking)
+- from / to
+- route description (duration, frequency, where to board)
+- cost (price, ticket type)
+- how to book (URL / app)
+- tips bullets (which terminal, where to find the platform, gotchas)
+- source URLs
+
+C) A general 'Getting Around' summary (in-city transport cards, apps, driving tips if applicable) — this goes inline in the Trip note, not as a separate Transport leg.
+
+Output in [language]. CITE ALL SOURCES with URLs.
 ")
 ```
 
@@ -163,17 +215,12 @@ YOUR TASKS:
 9. Power outlet type, voltage
 10. Travel insurance recommendations
 
-OUTPUT FORMAT (in [language]):
-- Safety & Scam Warnings
-- Weather & Packing List (for [month])
-- Visa & Entry Requirements
-- Cultural Etiquette
-- Emergency Info
-- Connectivity (SIM/WiFi)
-- Useful Phrases
-- Practical Details (outlets, voltage, etc.)
+STRUCTURED OUTPUT (all sections go inline as H2s in the Trip note — do NOT create separate notes):
+- ## Safety & Practical Tips (safety, scams, emergency numbers, visa, connectivity, useful phrases, outlets/voltage)
+- ## Weather & Packing (month-specific weather + packing checklist)
+- ## Quick Reference (one-page cheat sheet: emergency numbers, key phrases, hotel area, embassy, currency, key apps)
 
-CITE ALL SOURCES with URLs.
+Output in [language]. CITE ALL SOURCES with URLs.
 ")
 ```
 
@@ -197,14 +244,15 @@ YOUR TASKS:
 5. Note where to save money and where not to skimp
 6. Credit card / payment method advice (cash vs card acceptance)
 
-OUTPUT FORMAT (in [language]):
-- Budget Summary Table (daily + total)
-- Detailed Breakdown by Category
-- Money-Saving Tips
-- Currency & Payment Guide
-- Where to Splurge vs Save
+STRUCTURED OUTPUT (inlined as one H2 section in the Trip note — do NOT create a separate note):
+- ## Budget
+  - Budget Summary Table (Category | Daily Estimate | Trip Total | Notes)
+  - Detailed breakdown by category
+  - Money-saving tips
+  - Currency & payment guide
+  - Where to splurge vs save
 
-CITE ALL SOURCES with URLs.
+Output in [language]. CITE ALL SOURCES with URLs.
 ")
 ```
 
@@ -226,74 +274,306 @@ Combine all agent findings into a unified travel plan. Ensure:
 
 ## Step 5: Budget Consolidation
 
-Create the final itemized budget table incorporating real costs from all agents:
-- Accommodation total
-- Food total (with daily breakdown)
-- Transport total
-- Attractions total
-- Miscellaneous
-- **Grand total** with per-person and per-day averages
+Use the budget-calculator's output as the source of truth for the `## Budget` section in the Trip note. Update the table with real costs reflected by hotel picks and attraction entrance fees from other agents' findings.
 
-## Step 6: Output Generation
+## Step 6: Output Generation — Write to Obsidian vault
 
-Create the output directory and write all files:
+Compute these values once before writing any file:
+- `TRIP_SLUG` = `[Destination] - [Month] [Year]` (e.g., `Kyoto - April 2026`)
+- `NOW` = current timestamp formatted as `YYYY-MM-DDTHH:mm` (use `date '+%Y-%m-%dT%H:%M'` via Bash)
 
+### Filename sanitization
+
+Before writing any file, sanitize the title for filesystem safety: replace each of `/`, `\`, `:`, `*`, `?`, `"`, `<`, `>`, `|` with ` - ` (space-dash-space). Collapse repeated spaces.
+
+### Sight name collisions
+
+Before writing a Sights note, run `ls [VAULT]/Sights/` to check for an existing file with the same name:
+- If no collision: write as `[VAULT]/Sights/[Name].md`.
+- If a file already exists: write as `[VAULT]/Sights/[Name] ([City]).md`.
+- If THAT still collides: write as `[VAULT]/Sights/[Name] - [TRIP_SLUG].md`.
+
+Apply the same rule (city → trip slug) to Accommodations if a hotel name collides.
+
+### File templates
+
+Materialize the user's templater templates — substitute all `<%* tR += foo -%>` placeholders with real values, and substitute `<% tp.date.now('YYYY-MM-DD[T]HH:mm') %>` with `NOW`. Do NOT leave any templater syntax in the output.
+
+**Trip note** — `[VAULT]/Trips/[TRIP_SLUG].md`:
+
+```markdown
+---
+tags:
+  - type/trip
+  - planning
+title: "[TRIP_SLUG]"
+destination: "[Destination]"
+date-start: 
+date-end: 
+banner: 
+notes:
+created: [NOW]
+modified: [NOW]
+---
+
+# [TRIP_SLUG]
+
+## Overview
+[Group, budget tier, interests, special needs, pre-planned elements]
+
+## Itinerary
+[Day 1 / Day 2 / ... — each activity references its Sight via [[Sight Name]] wiki-link; restaurants likewise. Include Morning / Afternoon / Evening blocks, "why recommended", duration, cost, tips.]
+
+### Seasonal Notes
+[Festivals, events, weather impact for [month]]
+
+### Photography Spots
+[Spot list with best time of day]
+
+### Day Trips
+[If applicable]
+
+## Accommodations
+- [[Hotel Name 1]] — one-line rationale
+- [[Hotel Name 2]] — one-line rationale
+...
+
+## Transport
+- [[TRIP_SLUG - Leg 1 title]] (flight) — one-line summary
+- [[TRIP_SLUG - Leg 2 title]] (train) — one-line summary
+...
+
+### Getting Around
+[In-city transport summary: transit cards, apps, driving tips. Not a separate Transport note.]
+
+## Budget
+[Full itemized budget table from Agent 5, inline here]
+
+## Safety & Practical Tips
+[Safety warnings, scams, emergency numbers, visa, connectivity, useful phrases — from Agent 4]
+
+## Weather & Packing
+[Month-specific weather + packing checklist — from Agent 4]
+
+## Quick Reference
+[At-a-glance: emergency numbers, key phrases, hotel area, embassy, currency, key apps]
+
+## Food Culture
+See [[TRIP_SLUG - Food Culture]] for signature dishes, dining etiquette, and dietary guide.
+
+## Sources
+### Attractions
+- [Label](url)
+...
+### Food
+...
+### Hotels & Transport
+...
+### Safety & Practical
+...
+### Budget
+...
 ```
-TRAVEL/[destination]/
-├── README.md                    # Overview & navigation to all files
-├── itinerary.md                 # Day-by-day plan with reasoning
-├── food_guide.md                # Complete food report
-├── hotel_recommendations.md     # Hotel picks with budget analysis
-├── transportation.md            # Getting around + parking
-├── safety_and_tips.md           # Warnings, tips, cultural notes, packing
-├── budget_summary.md            # Itemized budget table
-├── quick_reference.md           # One-page cheat sheet
-└── sources/
-    └── bibliography.md          # All source URLs organized by topic
+
+**Sight note** (attractions AND restaurants) — `[VAULT]/Sights/[Name].md`:
+
+```markdown
+---
+tags:
+  - type/sight
+  - unvisited
+title: "[Name]"
+trip: "[[TRIP_SLUG]]"
+city: "[City]"
+country: "[Country]"
+visited: 
+banner: 
+notes:
+created: [NOW]
+modified: [NOW]
+---
+
+# [Name]
+
+**Category:** [Must-Visit / Recommended / Optional / Tourist Trap / Must-Eat / Worth Trying / Blacklisted]
+
+## Why visit
+[Reasoning paragraph]
+
+## Practical info
+- Hours: ...
+- Price / price range: ...
+- Location / area: ...
+- Booking: [link](url)
+- Visit duration / reservation policy: ...
+- Best time of day: ...
+
+## Tips
+- ...
+
+## Sources
+- [Label](url)
+
+Part of trip: [[TRIP_SLUG]]
 ```
 
-### File specifications:
+**Accommodation note** — `[VAULT]/Accommodations/[Hotel Name].md`:
 
-**README.md**: Trip overview, quick stats (destination, dates, budget, group), table of contents linking to all other files.
+```markdown
+---
+tags:
+  - type/stay
+  - upcoming
+title: "[Hotel Name]"
+trip: "[[TRIP_SLUG]]"
+city: "[City]"
+check-in: 
+check-out: 
+notes:
+created: [NOW]
+modified: [NOW]
+---
 
-**itinerary.md**: Day-by-day with Morning/Afternoon/Evening structure. Each activity has: description, why recommended, duration, cost, tips. Includes seasonal events, photography spots, day trips.
+# [Hotel Name]
 
-**food_guide.md**: Signature dishes with history, restaurant table (name, category, price, location, specialty, reservation needed), food markets, dining etiquette.
+## Why this hotel
+[Reasoning: who it suits, location rationale, pros]
 
-**hotel_recommendations.md**: 3-5 hotel options with: name, price/night, location, pros, cons, booking link. Ranked by value for the group type.
+## Practical info
+- Price per night: ...
+- Location / area: ...
+- Amenities: ...
+- Booking: [link](url)
 
-**transportation.md**: Getting there, getting around, parking guide (if driving), transport cards, apps, driving tips.
+## Cons / caveats
+- ...
 
-**safety_and_tips.md**: Safety warnings, scam alerts, weather + packing list, visa info, cultural etiquette, emergency numbers, SIM/WiFi, useful phrases, outlet/voltage info.
+## Sources
+- [Label](url)
 
-**budget_summary.md**: Itemized table with daily and total costs. Currency guide. Money-saving tips. Splurge vs save advice.
+Part of trip: [[TRIP_SLUG]]
+```
 
-**quick_reference.md**: Single-page cheat sheet with: emergency numbers, key phrases, hotel address (for taxi), embassy address, WiFi info, key app names, currency quick-reference.
+**Transport note** — `[VAULT]/Transport/[TRIP_SLUG] - [Leg title].md`:
 
-**sources/bibliography.md**: All URLs organized by topic (attractions, food, hotels, transport, safety).
+```markdown
+---
+tags:
+  - type/transport
+  - upcoming
+  - [mode]
+title: "[Leg title]"
+trip: "[[TRIP_SLUG]]"
+date: 
+notes:
+created: [NOW]
+modified: [NOW]
+---
+
+# [Leg title]
+
+## Route
+- From: [from]
+- To: [to]
+- Duration: ...
+- Frequency: ...
+
+## Cost
+- Price: ...
+- Ticket type: ...
+
+## How to book
+[link](url) — app/site/counter
+
+## Tips
+- ...
+
+## Sources
+- [Label](url)
+
+Part of trip: [[TRIP_SLUG]]
+```
+
+**Food Culture Tips note** — `[VAULT]/Tips/[TRIP_SLUG] - Food Culture.md`:
+
+```markdown
+---
+tags:
+  - type/tip
+  - food
+title: "[TRIP_SLUG] - Food Culture"
+trip: "[[TRIP_SLUG]]"
+created: [NOW]
+modified: [NOW]
+---
+
+# [TRIP_SLUG] — Food Culture
+
+## Signature dishes
+[Dish + cultural context, where to try]
+
+## Dining etiquette & tipping
+...
+
+## Dietary restriction guide
+- Vegetarian / vegan: ...
+- Halal / kosher: ...
+- Common allergens: ...
+- Gluten-free: ...
+
+## Food markets & street food
+- [[Market Name]] — note
+...
+
+## Sources
+- [Label](url)
+
+Part of trip: [[TRIP_SLUG]]
+```
+
+### Write order
+
+1. Write the Trip note first (`Trips/[TRIP_SLUG].md`).
+2. Write all Sight notes (attractions + restaurants).
+3. Write all Accommodation notes.
+4. Write all Transport notes (one per leg).
+5. Write the Food Culture Tips note.
+
+### Wiki-link rules
+
+- All cross-references between vault notes use Obsidian `[[Note Title]]` syntax (no path, no `.md` extension — Obsidian resolves by title across folders).
+- The `trip:` frontmatter field is a quoted wiki-link: `trip: "[[Kyoto - April 2026]]"`.
+- Source URLs and external booking links remain plain markdown links `[label](url)`.
 
 ## Step 7: Summary Output
 
-After writing all files, print a concise summary to the user:
+After writing all files, print a concise summary to the user listing what was written, grouped by folder:
 
 ```
-✅ Travel plan for [destination] is ready!
+✅ Travel plan written to: [VAULT]
 
-📁 Files written to: TRAVEL/[destination]/
+Trips/
+  - [[TRIP_SLUG]]   ← start here
 
-📅 Itinerary Overview:
+Sights/  ([N] notes)
+  - [[Sight 1]], [[Sight 2]], ...
+
+Accommodations/  ([N] notes)
+  - [[Hotel 1]], [[Hotel 2]], ...
+
+Transport/  ([N] notes)
+  - [[TRIP_SLUG - Leg 1]], ...
+
+Tips/
+  - [[TRIP_SLUG - Food Culture]]
+
+📅 Itinerary highlights:
 | Day | Highlights |
 |-----|------------|
 | Day 1 | ... |
-| Day 2 | ... |
-| ... | ... |
+...
 
-💰 Estimated Total Budget: [amount] [currency]
-- Accommodation: [amount]
-- Food: [amount]
-- Transport: [amount]
-- Attractions: [amount]
-- Other: [amount]
+💰 Estimated total budget: [amount] [currency]
 
-📖 Read the full plan: TRAVEL/[destination]/README.md
+📖 Open [[TRIP_SLUG]] in Obsidian for the full plan.
 ```

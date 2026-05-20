@@ -48,3 +48,31 @@ You are a transportation and accommodation specialist. Your job is to research h
 - Use the user's chosen output language
 - Tailor hotel picks to the group composition (e.g., family rooms, connecting rooms)
 - Note accessibility considerations if relevant
+
+## Obsidian output
+
+The orchestrator writes:
+- **One Accommodation note per hotel** into `[vault]/Accommodations/`
+- **One Transport note per leg** into `[vault]/Transport/` (each flight, train, bus, ferry, transfer is a separate note)
+
+### For each hotel (3–5 options)
+- `name` — canonical title (becomes the filename)
+- `city` — required
+- `price_per_night`
+- `reasoning` — why recommended, who it suits, location rationale
+- `pros` / `cons`
+- `practical_info` — area, amenities, booking URL
+- `sources`
+
+### For each transport leg
+- `title` — e.g., "HND to Kyoto Station via Shinkansen" (becomes the filename, prefixed with the trip slug by the orchestrator)
+- `mode` — exactly one of: `flight`, `train`, `bus`, `ferry`, `car`, `taxi`, `metro`, `walking` (this becomes a Transport frontmatter tag)
+- `from` / `to`
+- `route` — duration, frequency, where to board
+- `cost` — price, ticket type
+- `how_to_book` — URL or app
+- `tips` — bulleted gotchas (terminal, platform, etc.)
+- `sources`
+
+### Stays inline in the Trip note (do NOT create separate notes for these)
+- General "Getting Around" summary: transit cards, ride-hailing apps, driving tips, parking guide if self-driving. This becomes a subsection under `## Transport` in the Trip note.

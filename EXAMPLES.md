@@ -38,18 +38,19 @@ Plan a 3-day trip to Barcelona in September
    - local-intel gathers: Pickpocket warnings, siesta hours, Catalan phrases
    - budget-calculator estimates: €80-120/day (accommodation, food, attractions)
 
-3. **Output Generated** in `TRAVEL/barcelona/`
+3. **Output Generated** in your Obsidian vault
    ```
-   ├── README.md                    # Best September weather, crowds moderate
-   ├── itinerary.md                 # Day 1: Gothic Quarter + Rambla
-   │                                # Day 2: Sagrada Familia + Park Güell
-   │                                # Day 3: Beach + Barceloneta
-   ├── food_guide.md                # 15 tapas recommendations, market guide
-   ├── hotel_recommendations.md     # 3 options: Gothic, Eixample, Barceloneta
-   ├── transportation.md            # T-10 ticket, metro map, airport bus
-   ├── safety_and_tips.md          # Pickpocket hotspots, scam warnings
-   ├── budget_summary.md           # €240-360 total estimate
-   └── quick_reference.md          # Emergency: 112, basic Catalan phrases
+   Trips/
+     - Barcelona - September 2026.md   # Hub: itinerary, budget, safety, weather, quick ref
+   Sights/
+     - Sagrada Familia.md, Park Güell.md, Gothic Quarter.md, La Rambla.md, ...
+     - Tapas 24.md, Cervecería Catalana.md, Boqueria Market.md, ...
+   Accommodations/
+     - Hotel Casa Fuster.md, Praktik Bakery.md, Yurbban Trafalgar.md
+   Transport/
+     - Barcelona - September 2026 - BCN to Plaça Catalunya via Aerobús.md
+   Tips/
+     - Barcelona - September 2026 - Food Culture.md
    ```
 
 ---
@@ -115,18 +116,22 @@ Plan a week in Japan - arriving in Tokyo, want to see temples and traditional cu
 
 **Output Structure:**
 ```
-TRAVEL/japan-tokyo-kyoto/
-├── README.md                    # Overview: Tokyo (3d) → Kyoto (3d) → Nara (1d)
-├── itinerary.md                 # 7-day schedule with travel days
-├── food_guide.md                # Kaiseki, ramen, sushi by city
-├── hotel_recommendations.md     # Tokyo hotel + Kyoto ryokan
-├── transportation.md            # JR Pass guide, Shinkansen reservations
-├── safety_and_tips.md          # Temple etiquette, onsen rules, gift-giving
-├── budget_summary.md           # $2000-3000 (JR Pass, hotels, food)
-└── quick_reference.md          # Useful phrases, WiFi rental, IC cards
+Trips/
+  - Japan - April 2026.md         # Hub: 7-day itinerary across Tokyo/Kyoto/Nara, budget, safety, weather
+Sights/                            # ~20 notes
+  - Senso-ji.md, Tokyo Skytree.md, Fushimi Inari.md, Kinkaku-ji.md, Nara Park.md, ...
+  - Tsukiji Outer Market.md, Ichiran Shibuya.md, ...
+Accommodations/
+  - Park Hotel Tokyo.md, Kyoto Ryokan Mume.md
+Transport/
+  - Japan - April 2026 - HND to Shinjuku via Limousine Bus.md
+  - Japan - April 2026 - Tokyo to Kyoto via Shinkansen Nozomi.md
+  - ...
+Tips/
+  - Japan - April 2026 - Food Culture.md
 ```
 
-**Sample Day** (`itinerary.md`):
+**Sample Day** (excerpt from the Itinerary section of `Trips/Japan - April 2026.md`):
 ```markdown
 ## Day 4: Kyoto - Eastern Temples
 
@@ -164,7 +169,7 @@ TRAVEL/japan-tokyo-kyoto/
 - Maps food tour routes (French Quarter, Garden District)
 - Historical context for Creole vs Cajun
 
-**Sample Output** (`food_guide.md`):
+**Sample Output** (content distributed across `Tips/New Orleans - October 2026 - Food Culture.md` and individual `Sights/*.md` notes per restaurant):
 
 ```markdown
 ## Must-Try Dishes
@@ -221,7 +226,7 @@ TRAVEL/japan-tokyo-kyoto/
 - local-intel adds: Sunscreen reminder, beach safety, child ID bracelets
 - budget-calculator accounts for: Family passes, larger hotel room
 
-**Sample Output** (`itinerary.md`):
+**Sample Output** (from the Itinerary section of `Trips/San Diego - July 2026.md`):
 
 ```markdown
 ## Day 2: LEGOLAND California
@@ -273,7 +278,7 @@ Plan a cheap 4-day trip to Lisbon, budget is tight
 - Public transit optimization
 - Hostel vs Airbnb cost comparison
 
-**Sample Output** (`budget_summary.md`):
+**Sample Output** (from the `## Budget` section of `Trips/Lisbon - October 2026.md`):
 
 ```markdown
 ## Daily Budget Breakdown (Low-Cost Option)
@@ -331,7 +336,7 @@ Plan a cheap 4-day trip to Lisbon, budget is tight
 - Ramadan considerations (if applicable)
 - Hamman (bathhouse) protocol
 
-**Sample Output** (`safety_and_tips.md`):
+**Sample Output** (from the `## Safety & Practical Tips` section of `Trips/Morocco - April 2026.md`):
 
 ```markdown
 ## Cultural Etiquette
@@ -385,7 +390,7 @@ Plan a cheap 4-day trip to Lisbon, budget is tight
 - Day trip options from each city
 - Schengen zone entry/exit
 
-**Sample Output** (`transportation.md`):
+**Sample Output** — each leg becomes its own `Transport/*.md` note. Example: `Transport/Europe - June 2026 - Amsterdam to Paris via Thalys.md`:
 
 ```markdown
 ## Inter-City Travel
@@ -438,7 +443,7 @@ Plan a cheap 4-day trip to Lisbon, budget is tight
 - Daylight hours (20+ in July)
 - Weather backup plans
 
-**Sample Output** (`itinerary.md`):
+**Sample Output** (from the Itinerary section of `Trips/Iceland - July 2026.md`):
 
 ```markdown
 ## Day 3: South Coast - Waterfalls & Black Sand Beach
@@ -487,7 +492,7 @@ Plan a cheap 4-day trip to Lisbon, budget is tight
 
 ## Sample Quick Reference Output
 
-Every plan includes a `quick_reference.md` for at-a-glance info:
+Every Trip note includes a `## Quick Reference` section for at-a-glance info. Excerpt from `Trips/Barcelona - September 2026.md`:
 
 ```markdown
 # Barcelona Quick Reference
@@ -544,10 +549,11 @@ To generate any of these plans, simply tell Claude:
 ```
 
 The skill will automatically:
-1. Parse your requirements
-2. Deploy 5 specialist agents
-3. Research in parallel
-4. Synthesize findings
-5. Output structured markdown files
+1. Ask for your Obsidian vault travel folder path
+2. Parse your requirements
+3. Deploy 5 specialist agents
+4. Research in parallel
+5. Synthesize findings
+6. Write individual Obsidian notes into your vault (Trip hub + Sights + Accommodations + Transport + Tips), cross-linked via `[[wiki-links]]`
 
 **No commands needed - just natural conversation.**
